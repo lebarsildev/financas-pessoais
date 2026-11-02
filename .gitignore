@@ -1,0 +1,12 @@
+# Nunca publicar os dados em texto aberto
+extratos/
+*.xlsx
+*.xls
+*.csv
+*.txt
+~$*
+
+.DS_Store
+__pycache__/
+*.pyc
+.venv/

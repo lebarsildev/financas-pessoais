@@ -1,0 +1,362 @@
+{
+  "_como_usar": "Cada regra é [categoria, padrão]. O padrão é uma expressão regular aplicada à descrição em MAIÚSCULAS; a primeira regra que bater vence. Entradas sem regra viram 'Receitas'; saídas sem regra viram 'Transferências / Outros'. Saídas 'PIX TRANSF' sem regra viram 'PIX para pessoas'. 'periodos' reclassifica o que ficou sem categoria num intervalo de datas. Repasses (entra e sai o mesmo valor de/para pessoas em até 3 dias) viram 'Repasse' e não contam como entrada nem saída.",
+  "_privado": "Este é um EXEMPLO público. As suas regras reais ficam em extratos/categorias.json (fora do Git). Copie este arquivo para lá e ajuste.",
+  "regras": [
+    [
+      "Rendimentos",
+      "REND PAGO"
+    ],
+    [
+      "Estornos",
+      "^DEV PIX"
+    ],
+    [
+      "Cartão de crédito",
+      "FATURA"
+    ],
+    [
+      "Telefone",
+      "TIM S A"
+    ],
+    [
+      "Mercado",
+      "PREZUNIC|CARREFOUR|HORTIFRUTI|CENCOSUD|FRIGORI|CEJASA|NATURALMENT|C L D COMER"
+    ],
+    [
+      "Transporte",
+      "POSTO DE G|VOLTZ PARKO|CAOA|MP GARAGEM|RJ CONS"
+    ],
+    [
+      "Saúde",
+      "DROGA|RAIA|FARMACIA|RD SAUDE|DROGARIA"
+    ],
+    [
+      "Compras online",
+      "SHPP|AMAZON|MARKETP|MAGALUPAY|PAGHIPER|PAGAR ME|CASAS GUANA|OUTLET|BELL ART"
+    ],
+    [
+      "Lazer",
+      "INGRESSO|SESC|MULTIPLAN|BONDINHO|DIVERTPLAN|FANTASY|MVMT|SANTUARIO|CAMPEST|ZIG TEC|AIBR"
+    ],
+    [
+      "Educação",
+      "CESGRANRIO|I9 EDUC"
+    ],
+    [
+      "Saques",
+      "SAQUE"
+    ]
+  ],
+  "padrao_entrada": "Receitas",
+  "padrao_saida": "Outros",
+  "padrao_pix_pessoa": "PIX para pessoas",
+  "periodos": [
+    {
+      "de": "2026-01-01",
+      "ate": "2026-01-07",
+      "categoria": "Viagem",
+      "motivo": "exemplo: viagem de férias"
+    }
+  ],
+  "repasses": {
+    "ativo": true,
+    "dias": 3,
+    "tolerancia": 0.5
+  },
+  "nomes": {
+    "_como_usar": "Nome amigável dos lançamentos da conta: [padrão, nome]. Sem regra, o nome é a descrição sem 'PIX QRS'/'PIX TRANSF'/'RSHOP' e sem a data do fim.",
+    "regras": [
+      [
+        "FATURA",
+        "Fatura do cartão Itaú"
+      ],
+      [
+        "REND PAGO",
+        "Rendimento da conta"
+      ],
+      [
+        "SAQUE",
+        "Saque Banco24Horas"
+      ],
+      [
+        "^DEV PIX",
+        "Devolução de Pix"
+      ],
+      [
+        "TIM S A",
+        "TIM"
+      ],
+      [
+        "SHPP BRASIL",
+        "Shopee"
+      ],
+      [
+        "PIX MARKETP",
+        "Marketplace (Pix)"
+      ],
+      [
+        "AMAZON",
+        "Amazon"
+      ],
+      [
+        "PREZUNIC",
+        "Prezunic"
+      ],
+      [
+        "CEJASA",
+        "Cejasa"
+      ],
+      [
+        "CARREFOUR",
+        "Carrefour"
+      ],
+      [
+        "HORTIFRUTI",
+        "Hortifruti"
+      ],
+      [
+        "POSTO DE G|POSTO DE GA",
+        "Posto de gasolina"
+      ],
+      [
+        "BAR LANCH|LANCHONETE",
+        "Lanchonete"
+      ],
+      [
+        "DROGA|RAIA|DROGARIA|FARMACIA",
+        "Farmácia"
+      ],
+      [
+        "INGRESSO",
+        "Ingresso.com"
+      ],
+      [
+        "SESC",
+        "Sesc"
+      ],
+      [
+        "MCDONALDS",
+        "McDonald's"
+      ],
+      [
+        "KFC",
+        "KFC"
+      ],
+      [
+        "BURGER",
+        "Burger King"
+      ],
+      [
+        "PAGHIPER",
+        "PagHiper"
+      ],
+      [
+        "MAGALUPAY",
+        "Magalu"
+      ],
+      [
+        "CESGRANRIO",
+        "Fundação Cesgranrio"
+      ],
+      [
+        "CAOA",
+        "CAOA Motor"
+      ],
+      [
+        "ZIG",
+        "Zig"
+      ],
+      [
+        "RESTAURANTE",
+        "Restaurante"
+      ],
+      [
+        "SORVETERIA",
+        "Sorveteria"
+      ]
+    ]
+  },
+  "cartao": {
+    "_como_usar": "Regras dos itens da fatura: [padrão, categoria, nome]. O padrão é uma expressão regular aplicada à descrição em MAIÚSCULAS e sem espaços nem símbolos. Sem regra, vale o 'mapa' da categoria impressa na fatura.",
+    "regras": [
+      [
+        "^CANC",
+        "Estornos",
+        "Cancelamento de compra"
+      ],
+      [
+        "DLGOOGLE|^GOOGLE",
+        "Assinaturas",
+        "Google"
+      ],
+      [
+        "GOLLINHAS",
+        "Viagem",
+        "GOL Linhas Aéreas"
+      ],
+      [
+        "HOTEISCOM",
+        "Viagem",
+        "Hoteis.com"
+      ],
+      [
+        "NINTENDO",
+        "Lazer",
+        "Nintendo eShop"
+      ],
+      [
+        "AMAZONPRIME",
+        "Assinaturas",
+        "Amazon Prime"
+      ],
+      [
+        "RIACHUELO",
+        "Compras",
+        "Riachuelo"
+      ],
+      [
+        "^CEANOR|^CEA",
+        "Compras",
+        "C&A"
+      ],
+      [
+        "BARRASHOPPING",
+        "Compras",
+        "Barra Shopping"
+      ],
+      [
+        "ESTACIONAMENT",
+        "Transporte",
+        "Estacionamento"
+      ],
+      [
+        "LAMSA",
+        "Transporte",
+        "Lamsa (pedágio)"
+      ],
+      [
+        "ANTHROPIC|CLAUDE",
+        "Assinaturas",
+        "Claude (Anthropic)"
+      ],
+      [
+        "^IOF",
+        "Taxas",
+        "IOF internacional"
+      ],
+      [
+        "APPLECOM",
+        "Assinaturas",
+        "Apple.com"
+      ],
+      [
+        "CANCELAMENTO",
+        "Estornos",
+        "Cancelamento de compra"
+      ],
+      [
+        "MERCADOPAGO",
+        "Outros",
+        "Mercado Pago"
+      ],
+      [
+        "TICKETMASTE",
+        "Lazer",
+        "Ticketmaster"
+      ],
+      [
+        "TICKETSPORTS",
+        "Lazer",
+        "TicketSports"
+      ],
+      [
+        "^ZIG",
+        "Lazer",
+        "Zig (consumo em evento)"
+      ],
+      [
+        "AMAZON",
+        "Compras online",
+        "Amazon"
+      ],
+      [
+        "SHOPEE",
+        "Compras online",
+        "Shopee"
+      ],
+      [
+        "MERCADOLIVRE",
+        "Compras online",
+        "Mercado Livre"
+      ],
+      [
+        "DECATHLON",
+        "Compras",
+        "Decathlon"
+      ],
+      [
+        "CARREFOUR|ATACADAO",
+        "Mercado",
+        "Carrefour Atacadão"
+      ],
+      [
+        "SUPERMARKET|^RJ$",
+        "Mercado",
+        "Supermarket"
+      ],
+      [
+        "UBER",
+        "Transporte",
+        "Uber"
+      ],
+      [
+        "POSTO",
+        "Transporte",
+        "Posto de gasolina"
+      ],
+      [
+        "GARAGEM",
+        "Transporte",
+        "MP Garagem"
+      ],
+      [
+        "^TIM",
+        "Telefone",
+        "TIM"
+      ],
+      [
+        "RAIA|DROGASIL",
+        "Saúde",
+        "Droga Raia"
+      ]
+    ],
+    "mapa": {
+      "restaurante": "Alimentação",
+      "supermercado": "Mercado",
+      "transporte": "Transporte",
+      "saúde": "Saúde",
+      "farmácia": "Saúde",
+      "lazer": "Lazer",
+      "vestuário": "Compras",
+      "serviços": "Serviços",
+      "retail": "Compras",
+      "outros": "Outros",
+      "internacional": "Outros",
+      "taxas": "Taxas",
+      "educação": "Educação",
+      "viagem": "Viagem",
+      "hospedagem": "Lazer",
+      "eletronicos": "Compras online",
+      "eletronics": "Compras"
+    }
+  },
+  "fixos": {
+    "_como_usar": "Contas fixas que entram na previsão do mês mesmo quando o valor muda: [padrão na descrição, nome que aparece]. O valor previsto é o do último mês.",
+    "regras": [
+      [
+        "ALUGUEL|CONDOMINIO",
+        "Aluguel / condomínio"
+      ]
+    ]
+  }
+}
