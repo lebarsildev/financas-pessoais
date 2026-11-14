@@ -195,7 +195,7 @@ function renderMetas(m, cm, still) {
   });
   const editadas = ORC.cats.filter(c => ORC.origem[c] === 'local').length;
   $('#bFoot').innerHTML = `<p class="note">As metas começam pela <b>mediana</b> do que você gastou por mês em cada categoria. ${editadas ? `${editadas} editada${editadas > 1 ? 's' : ''} neste navegador.` : ''}
-    Para levar as metas para o cofre (e para o celular), baixe o arquivo, salve como <code>extratos/metas.json</code> e gere o cofre.</p>
+    Para as metas valerem também no celular, baixe o arquivo e rode o gerador do cofre: ele pega o <code>metas.json</code> sozinho da pasta Downloads.</p>
     <div class="b-btns"><button type="button" class="btn-sec" id="bDown">Baixar metas.json</button><button type="button" class="btn-sec ghost" id="bReset">Voltar às sugestões</button></div>`;
   $('#bDown').onclick = () => {
     const o = { _gerado: new Date().toISOString().slice(0, 10), mensal: Object.fromEntries(ORC.cats.map(c => [c, ORC.metas[c] ?? 0])) };

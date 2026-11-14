@@ -75,7 +75,12 @@ function drawCost(tot, b) {
 
 /* ---------- plano para o primeiro milhão ---------- */
 const PL_KEY = 'inv-plano';
-function lerPlano() { try { return JSON.parse(localStorage.getItem(PL_KEY) || 'null'); } catch { return null; } }
+/** plano salvo: o deste navegador vale mais; sem ele, o que veio no cofre (extratos/plano.json) */
+function lerPlano() { let p = null; try { p = JSON.parse(localStorage.getItem(PL_KEY) || 'null'); } catch {} return p || (D && D.plano) || null; }
+function baixarPlano(p) {
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(p, null, 2)], { type: 'application/json' })); a.download = 'plano.json';
+  document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500);
+}
 function aporteMedio(meses = 24) {
   const de = janela(meses)[0], L = D.trades.filter(x => x[0].slice(0, 7) >= de && (x[1] === 'C' || x[1] === 'V'));
   const inc = D.inc.filter(x => x[0].slice(0, 7) >= de).reduce((a, x) => a + x[4], 0);
@@ -102,7 +107,8 @@ function renderPlano() {
   if (!IDX) { $('#plBody').hidden = true; $('#plErr').hidden = false; return; }
   $('#plBody').hidden = false; $('#plErr').hidden = true;
   const sug = { ini: Math.round(tot.val / 1000) * 1000, ap: Math.max(500, Math.round(aporteMedio() / 100) * 100), cdi: +(taxa12('cdi') * 100).toFixed(1), inf: +(taxa12('ipca') * 100).toFixed(1), juro: 6, prazo: 15, meta: 1000000, hoje: true };
-  if (!PL) { PL = Object.assign({}, sug); try { Object.assign(PL, JSON.parse(localStorage.getItem('inv-plano-form') || '{}')); } catch {} }
+  if (!PL) { PL = Object.assign({}, sug); const sp = lerPlano(); if (sp) Object.keys(sug).forEach(k => { if (sp[k] != null && k !== 'ini') PL[k] = sp[k]; });
+    try { Object.assign(PL, JSON.parse(localStorage.getItem('inv-plano-form') || '{}')); } catch {} }
   const f = $('#plForm');
   if (!f.dataset.ok) {
     f.dataset.ok = 1; f.addEventListener('submit', e => e.preventDefault());
@@ -110,7 +116,9 @@ function renderPlano() {
       try { localStorage.setItem('inv-plano-form', JSON.stringify(PL)); } catch {} calcPlano(tot, sug, false); });
     $('#plReset').onclick = () => { PL = Object.assign({}, sug); try { localStorage.removeItem('inv-plano-form'); } catch {} preencher(); calcPlano(tot, sug, true); };
     $('#plSave').onclick = () => { const p = Object.assign({ data: TODAY(), valor: tot.val }, PL); try { localStorage.setItem(PL_KEY, JSON.stringify(p)); } catch {} calcPlano(tot, sug, false); };
-    $('#plTrack').addEventListener('click', e => { if (e.target.closest('[data-apagar]')) { try { localStorage.removeItem(PL_KEY); } catch {} calcPlano(tot, sug, false); } });
+    $('#plTrack').addEventListener('click', e => {
+      if (e.target.closest('[data-baixar]')) baixarPlano(lerPlano());
+      if (e.target.closest('[data-apagar]')) { try { localStorage.removeItem(PL_KEY); } catch {} calcPlano(tot, sug, false); } });
   }
   const preencher = () => f.querySelectorAll('[name]').forEach(el => { if (el.type === 'checkbox') el.checked = !!PL[el.name]; else el.value = el.dataset.fmt === 'brl' ? num(PL[el.name]) : String(PL[el.name]).replace('.', ','); });
   preencher();
@@ -150,7 +158,7 @@ function calcPlano(tot, sug, anim) {
   const aps = [...new Set([1000, 2000, 3000, 5000, PL.ap].map(v => Math.round(v)))].sort((a, b) => a - b);
   $('#plSens').innerHTML = `<thead><tr><th>Aporte por mês</th>${op.map(o => `<th class="r">${o.nome}</th>`).join('')}</tr></thead><tbody>${aps.map(a => `<tr class="${a === Math.round(PL.ap) ? 'on' : ''}"><td class="num">${brl0(a)}${a === Math.round(PL.ap) ? ' <span class="mini">atual</span>' : ''}</td>${op.map(o => `<td class="r num">${curto(mesesAte(PL.ini, a, o.real, PL.meta, inf, PL.hoje))}</td>`).join('')}</tr>`).join('')}</tbody>`;
   // acompanhamento
-  const sp = lerPlano(), tr = $('#plTrack');
+  const sp = lerPlano(), tr = $('#plTrack'); let local = false; try { local = !!localStorage.getItem(PL_KEY); } catch {}
   if (!sp) { tr.innerHTML = `<p class="note">Salve o plano para acompanhar, mês a mês, se a carteira está à frente ou atrás do caminho até a meta.</p>`; }
   else {
     // caminho de referência: IPCA + juros do plano, aporte corrigido pela inflação
@@ -161,6 +169,8 @@ function calcPlano(tot, sug, anim) {
       <div><span class="k">Previsto para hoje</span><b class="num">${brl0(prev)}</b></div>
       <div><span class="k">Carteira hoje</span><b class="num">${brl0(tot.val)}</b></div>
       <div><span class="k">${d >= 0 ? 'À frente' : 'Atrás'}</span><b class="num ${d >= 0 ? 'pos' : 'neg'}">${brl0(Math.abs(d))}</b></div></div>
-      <p class="note">Usa IPCA + ${num(sp.juro, 1)}% e aporte de ${brl0(sp.ap)} por mês. Quedas da bolsa mexem no valor de um mês para o outro; o que conta é a tendência. <button type="button" class="linkbtn" data-apagar>Apagar plano salvo</button></p>`;
+      <p class="note">Usa IPCA + ${num(sp.juro, 1)}% e aporte de ${brl0(sp.ap)} por mês. Quedas da bolsa mexem no valor de um mês para o outro; o que conta é a tendência.</p>
+      <p class="note">${local ? 'Este plano está só neste navegador. Para ele valer também no celular, baixe o arquivo e rode o gerador do cofre, que o pega sozinho da pasta Downloads.' : 'Este plano veio do cofre.'}
+        <button type="button" class="linkbtn" data-baixar>Baixar plano.json</button>${local ? ' · <button type="button" class="linkbtn" data-apagar>Apagar o plano deste navegador</button>' : ''}</p>`;
   }
 }

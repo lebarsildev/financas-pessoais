@@ -8,6 +8,7 @@ Uso:
     python3 tools/gerar_cofre.py                 # lê ./extratos e ./extratos/b3
     python3 tools/gerar_cofre.py arquivo.xlsx    # conta: lê só os arquivos indicados
     python3 tools/gerar_cofre.py --verificar     # confere se a senha abre os cofres atuais
+    python3 tools/gerar_cofre.py --restaurar     # recupera regras, metas e plano guardados no cofre
 
 A mesma senha cifra os dois cofres, então um desbloqueio abre os dois módulos do site.
 
@@ -35,6 +36,9 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 REGRAS_LOCAL = os.path.join(RAIZ, "extratos", "categorias.json")
 REGRAS_EXEMPLO = os.path.join(RAIZ, "tools", "categorias.exemplo.json")
 REGRAS = REGRAS_LOCAL if os.path.exists(REGRAS_LOCAL) else REGRAS_EXEMPLO
+PASTA_EXT = os.path.join(RAIZ, "extratos")
+# Arquivos feitos à mão que só existem neste computador: uma cópia vai cifrada dentro do cofre da conta.
+GUARDAR = ["categorias.json", "metas.json", "plano.json"]
 ITER = 600_000
 SENHA_MIN = 12
 
@@ -185,6 +189,69 @@ def verificar():
         except Exception: sys.exit(f"  {nome}: senha incorreta.")
         print(f"  {nome}: OK, {len(dados[chave_n])} registros, gerado em {dados['geradoEm']}.")
 
+def copia_seguranca():
+    """Texto dos arquivos feitos à mão (regras, metas, plano, faturas transcritas) para guardar cifrado no cofre."""
+    arqs = [os.path.join(PASTA_EXT, n) for n in GUARDAR] + sorted(glob.glob(os.path.join(PASTA_FAT, "*.json")))
+    return {os.path.relpath(a, PASTA_EXT).replace(os.sep, "/"): open(a, encoding="utf-8").read() for a in arqs if os.path.exists(a)}
+
+def restaurar():
+    """Recria em extratos/ os arquivos guardados no cofre. Nunca apaga o que já existe."""
+    if not os.path.exists(SAIDA): sys.exit("Não há data/vault.json para restaurar.")
+    try: dados = decifrar(json.load(open(SAIDA)), getpass.getpass("Senha do cofre: "))
+    except Exception: sys.exit("Senha incorreta.")
+    copia = dados.get("copia") or {}
+    if not copia: sys.exit("Este cofre ainda não tem cópia de segurança. Gere o cofre de novo para criar.")
+    for rel, texto in copia.items():
+        dest = os.path.join(PASTA_EXT, *rel.split("/"))
+        os.makedirs(os.path.dirname(dest), exist_ok=True)
+        if os.path.exists(dest):
+            if open(dest, encoding="utf-8").read() == texto: print(f"  {rel}: já está igual."); continue
+            dest += ".restaurado"
+        open(dest, "w", encoding="utf-8").write(texto)
+        print(f"  {os.path.relpath(dest, RAIZ)}: gravado.")
+    print(f"Cópia de {dados['geradoEm']}.")
+
+def trazer_downloads():
+    """metas.json e plano.json baixados pelo site caem em Downloads; traz o mais novo para extratos/."""
+    import shutil
+    testes = {"metas.json": lambda o: isinstance(o.get("mensal"), dict), "plano.json": lambda o: "meta" in o and "ap" in o}
+    for nome, valido in testes.items():
+        base = nome[:-5]
+        cands = [a for a in glob.glob(os.path.join(os.path.expanduser("~"), "Downloads", base + "*.json"))
+                 if re.fullmatch(re.escape(base) + r"( ?\(\d+\))?\.json", os.path.basename(a))]
+        if not cands: continue
+        novo = max(cands, key=os.path.getmtime); dest = os.path.join(PASTA_EXT, nome)
+        if os.path.exists(dest) and os.path.getmtime(dest) >= os.path.getmtime(novo): continue
+        try:
+            if not valido(json.load(open(novo, encoding="utf-8"))): continue
+        except Exception: continue
+        shutil.copy2(novo, dest)
+        print(f"Trouxe {os.path.basename(novo)} da pasta Downloads para extratos/{nome}.")
+
+def comparar(ant, linhas, saldo):
+    """Mostra o que mudou desde o cofre anterior, para pegar leitura errada antes de publicar."""
+    if not ant or not ant.get("tx"): return
+    def por_mes(tx):
+        m = collections.defaultdict(lambda: [0, 0.0])
+        for l in tx: m[l[0][:7]][0] += 1; m[l[0][:7]][1] += l[2]
+        return m
+    a, b = por_mes(ant["tx"]), por_mes(linhas)
+    fim_ant = max(l[0] for l in ant["tx"]); ult = fim_ant[:7]
+    novos = [l for l in linhas if l[0] > fim_ant]
+    print(f"\nDesde o cofre de {ant.get('geradoEm', '?')}:")
+    print(f"  {len(novos)} lançamentos novos depois de {fim_ant[8:]}/{fim_ant[5:7]}" + (f", até {max(l[0] for l in novos)[8:]}/{max(l[0] for l in novos)[5:7]}." if novos else "."))
+    mud = [m for m in sorted(set(a) | set(b)) if m < ult and (a[m][0] != b[m][0] or abs(a[m][1] - b[m][1]) > 0.005)]
+    for m in mud:
+        print(f"  ATENÇÃO: {m} já estava fechado e mudou: {a[m][0]} → {b[m][0]} lançamentos, resultado {brl(a[m][1])} → {brl(b[m][1])}.")
+    sa = dict(ant.get("saldo") or [])
+    if sa and saldo:
+        print(f"  Saldo: {brl(sa[max(sa)])} em {max(sa)[8:]}/{max(sa)[5:7]} → {brl(saldo[max(saldo)])} em {max(saldo)[8:]}/{max(saldo)[5:7]}.")
+    ca = collections.Counter(l[3] for l in ant["tx"] if l[0] <= fim_ant); cb = collections.Counter(l[3] for l in linhas if l[0] <= fim_ant)
+    trocas = sum((ca - cb).values())
+    if trocas and not mud: print(f"  {trocas} lançamentos antigos mudaram de categoria (regras novas).")
+    if mud: print("  Confira esses meses antes de publicar. Se você corrigiu um extrato antigo, está certo.")
+
+
 def faturas(linhas):
     """Faturas do cartão: .xlsx (PDF convertido) e .json (transcrição) em extratos/faturas."""
     if not os.path.isdir(PASTA_FAT): return []
@@ -244,10 +311,13 @@ def indices():
 
 def main():
     args = sys.argv[1:]
-    if REGRAS == REGRAS_EXEMPLO:
-        print("Aviso: usando as regras de EXEMPLO. Copie tools/categorias.exemplo.json para extratos/categorias.json e ajuste com as suas.\n")
     if "--verificar" in args: return verificar()
-    arquivos = args or sorted(glob.glob(os.path.join(RAIZ, "extratos", "*.txt")) + glob.glob(os.path.join(RAIZ, "extratos", "*.xlsx")))
+    if "--restaurar" in args: return restaurar()
+    if REGRAS == REGRAS_EXEMPLO:
+        print("Aviso: usando as regras de EXEMPLO. Copie tools/categorias.exemplo.json para extratos/categorias.json e ajuste com as suas"
+              " (ou rode com --restaurar para recuperar as suas do cofre).\n")
+    trazer_downloads()
+    arquivos = [a for a in args if not a.startswith("--")] or sorted(glob.glob(os.path.join(RAIZ, "extratos", "*.txt")) + glob.glob(os.path.join(RAIZ, "extratos", "*.xlsx")))
     arquivos = [a for a in arquivos if not os.path.basename(a).startswith("~$")]
     if arquivos: linhas, saldo, revisar = conta(arquivos)
     fats = faturas(linhas) if arquivos else []
@@ -257,16 +327,22 @@ def main():
     if not arquivos:
         print("Sem extratos da conta em 'extratos'; o cofre da conta não será alterado.")
 
-    senha = pedir_senha()
+    senha, ant = pedir_senha()
     hoje = dt.date.today().isoformat()
     os.makedirs(os.path.dirname(SAIDA), exist_ok=True)
     if arquivos:
         metas_arq = os.path.join(RAIZ, "extratos", "metas.json")
         metas = json.load(open(metas_arq, encoding="utf-8")) if os.path.exists(metas_arq) else None
         if metas: print(f"Metas do orçamento: {len(metas.get('mensal', {}))} categorias (extratos/metas.json)")
-        json.dump(cifrar({"tx": linhas, "saldo": sorted(saldo.items()), "revisar": revisar, "faturas": fats, "metas": metas, "fixos": fixos(linhas), "geradoEm": hoje}, senha), open(SAIDA, "w"))
-        print(f"\nCofre da conta gravado em data/vault.json ({os.path.getsize(SAIDA)//1024} KB).")
+        comparar(ant, linhas, saldo)
+        copia = copia_seguranca()
+        json.dump(cifrar({"tx": linhas, "saldo": sorted(saldo.items()), "revisar": revisar, "faturas": fats, "metas": metas, "fixos": fixos(linhas), "copia": copia, "geradoEm": hoje}, senha), open(SAIDA, "w"))
+        print(f"\nCofre da conta gravado em data/vault.json ({os.path.getsize(SAIDA)//1024} KB), com cópia cifrada de {len(copia)} arquivos seus ({', '.join(copia)}).")
     if inv:
+        plano_arq = os.path.join(PASTA_EXT, "plano.json")
+        if os.path.exists(plano_arq):
+            inv["plano"] = json.load(open(plano_arq, encoding="utf-8"))
+            print(f"Plano da meta: {brl(inv['plano'].get('meta', 0))}, aporte de {brl(inv['plano'].get('ap', 0))} por mês (extratos/plano.json)")
         json.dump(cifrar(inv, senha), open(SAIDA_INV, "w"))
         print(f"Cofre de investimentos gravado em data/investimentos.json ({os.path.getsize(SAIDA_INV)//1024} KB).")
         indices()
@@ -347,6 +423,20 @@ def conta(arquivos):
 
 
 def pedir_senha():
+    """Devolve (senha, dados do cofre anterior ou None). Se já existe cofre, a senha tem de abri-lo:
+    assim um erro de digitação não troca a senha do site sem você perceber."""
+    atual = json.load(open(SAIDA)) if os.path.exists(SAIDA) else None
+    if atual:
+        print("\nDigite a senha do cofre. Ela não aparece na tela.")
+        while True:
+            s1 = getpass.getpass("Senha: ")
+            try: return s1, decifrar(atual, s1)
+            except Exception: pass
+            print("  Essa senha não abre o cofre atual.")
+            if input("  Tentar de novo (Enter) ou trocar a senha do site por esta (digite TROCAR)? ").strip().upper() == "TROCAR":
+                if len(s1) < SENHA_MIN: print(f"  Muito curta para ser a senha nova: mínimo {SENHA_MIN} caracteres."); continue
+                if getpass.getpass("  Repita a senha nova: ") == s1: return s1, None
+                print("  As senhas não conferem.")
     print(f"\nDefina a senha do cofre (mínimo {SENHA_MIN} caracteres). Ela não aparece na tela.")
     while True:
         s1 = getpass.getpass("Senha: ")
@@ -355,7 +445,7 @@ def pedir_senha():
         if getpass.getpass("Repita a senha: ") != s1:
             print("  As senhas não conferem. Tente de novo."); continue
         break
-    return s1
+    return s1, None
 
 
 if __name__ == "__main__":

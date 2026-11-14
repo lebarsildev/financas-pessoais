@@ -68,6 +68,27 @@ As cotações vêm da brapi.dev, que libera PETR4, VALE3, ITUB4 e MGLU3 sem chav
 
 A planilha precisa de uma aba com as colunas **Data**, **Lançamentos** (ou Descrição), **Valor** e, se tiver, **Saldo**. Uma aba **Revisar** é mostrada no painel como "Para revisar".
 
+## Publicar sozinho (uma vez)
+
+Para o `atualizar.sh` publicar direto, sem pedir ao Claude, ligue a pasta ao GitHub:
+
+1. No GitHub: foto do perfil → **Settings** → **Developer settings** → **Personal access tokens** → **Fine-grained tokens** → **Generate new token**.
+   - **Repository access:** Only select repositories → `financas-pessoais`.
+   - **Permissions → Repository permissions → Contents:** Read and write.
+   - Validade de até 1 ano. Copie o token (começa com `github_pat_`); ele só aparece uma vez.
+2. No Terminal, dentro da pasta do projeto: `bash ligar_github.sh`. Quando pedir, **Username** é `lebarsildev` e **Password** é o token. O Mac guarda no Chaveiro.
+
+Depois disso, todo mês: `bash atualizar.sh`. Ele busca as melhorias do painel, gera os dados cifrados (pede a senha do cofre) e publica.
+
+O token só serve para este repositório, que é público e só tem dados cifrados. Nunca cole o token nem a senha do cofre em conversas.
+
+## Conferência e cópia de segurança
+
+- O gerador pede a senha uma vez e confere se ela abre o cofre atual. Assim, um erro de digitação não troca a senha do site.
+- Antes de gravar, ele mostra o que mudou desde o cofre anterior: lançamentos novos, saldo e um **ATENÇÃO** se um mês já fechado mudou (sinal de extrato lido errado ou corrigido).
+- `metas.json` e `plano.json` baixados pelo site são trazidos sozinhos da pasta Downloads para `extratos/`.
+- Uma cópia de `categorias.json`, `metas.json`, `plano.json` e das faturas transcritas vai cifrada dentro do cofre. Para recuperar num computador novo: `python3 tools/gerar_cofre.py --restaurar`.
+
 ## Categorias
 
 Edite `extratos/categorias.json` (fica só no seu computador; o repositório público tem apenas `tools/categorias.exemplo.json`). Cada regra é `[categoria, padrão]`, onde o padrão é uma expressão regular aplicada à descrição em maiúsculas; vale a primeira que bater. Depois rode o script de novo.
