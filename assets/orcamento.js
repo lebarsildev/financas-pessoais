@@ -102,6 +102,8 @@ function renderBudget(still) {
   const falha = (onde, e) => { console.error(e); const el = $(onde); if (el) el.innerHTML = `<p class="empty">Não consegui montar esta parte (${esc(e.message || e)}). Recarregue a página; se continuar, me mande um print.</p>`; };
   try { if (!ORC.cats) prepOrcamento(); } catch (e) { falha('#budget', e); return; }
   try { renderPrevisao(m, cm); } catch (e) { falha('#fcList', e); }
+  try { renderAporte(m, cm); } catch (e) { falha('#apBody', e); }
+  try { renderReserva(); } catch (e) { falha('#resBody', e); }
   try { renderMetas(m, cm, still); } catch (e) { falha('#budget', e); }
 }
 
@@ -199,6 +201,7 @@ function renderMetas(m, cm, still) {
     <div class="b-btns"><button type="button" class="btn-sec" id="bDown">Baixar metas.json</button><button type="button" class="btn-sec ghost" id="bReset">Voltar às sugestões</button></div>`;
   $('#bDown').onclick = () => {
     const o = { _gerado: new Date().toISOString().slice(0, 10), mensal: Object.fromEntries(ORC.cats.map(c => [c, ORC.metas[c] ?? 0])) };
+    const rs = lerReserva(); if (rs && rs.valor != null) o.reserva = rs;
     const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(o, null, 2)], { type: 'application/json' })); a.download = 'metas.json';
     document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500);
   };

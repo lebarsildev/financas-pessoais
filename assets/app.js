@@ -97,6 +97,7 @@ function init(){
   $('#rev').innerHTML = D.revisar.map(r=>`<tr><td class="num">${r.linha}</td><td class="num">${esc(r.txt)}</td><td>${esc(r.motivo)}</td></tr>`).join('');
   $('#geradoEm').textContent = 'dados atualizados em '+D.geradoEm.split('-').reverse().join('/');
   render();
+  if(typeof carregarInv==='function') carregarInv();
 }
 const esc = s => String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 /* barra de meses do ano escolhido; com mais de um ano de dados aparece o seletor ‹ ano › */
@@ -120,6 +121,7 @@ function render(){
   document.querySelectorAll('nav.tabs button').forEach(b=>b.setAttribute('aria-selected',b.dataset.v===S.view));
   ['overview','tx','budget'].forEach(v=>$('#v-'+v).hidden = v!==S.view);
   if(S.view==='overview') renderOverview();
+  if(S.view==='overview' && typeof renderMetaCard==='function') renderMetaCard();
   if(S.view==='tx') renderTx();
   if(S.view==='budget') renderBudget();
   moveInd();

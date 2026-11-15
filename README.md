@@ -107,6 +107,12 @@ Não existe recuperação de senha: se esquecer, gere o cofre de novo a partir d
 
 `index.html` e `investimentos.html` carregam `assets/*.js|css?v=AAAAMMDDHHMM`. Ao mudar o código, atualize esse número (o Claude faz isso ao publicar) para o navegador não usar a versão antiga em cache.
 
+## Meta e reserva na Conta
+
+- **Visão geral:** cartão "Meta dos investimentos" com o valor da carteira, o percentual da meta e a data prevista no plano e no ritmo dos últimos 12 meses. Usa o cofre de investimentos já aberto na aba e o plano salvo em Investimentos → Meta 1 milhão.
+- **Orçamento → Sobra do mês e aporte:** sobra da conta, valor aplicado (relatórios da B3) e aporte do plano, mês a mês.
+- **Orçamento → Reserva de emergência:** você informa quanto tem guardado; o painel compara com N meses do seu gasto típico. O valor vai junto no `metas.json`.
+
 ## Virada do ano
 
 Com dados de mais de um ano, a Conta mostra o seletor "‹ ano ›": a barra lista os meses daquele ano e "Ano todo" soma só ele. Comparações entre meses (média, mês anterior, previsão) continuam atravessando a virada.

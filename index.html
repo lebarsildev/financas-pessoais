@@ -10,8 +10,8 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Crect width=%2232%22 height=%2232%22 rx=%228%22 fill=%22%232D4FD6%22/%3E%3Ctext x=%2216%22 y=%2221%22 font-size=%2212%22 font-family=%22sans-serif%22 font-weight=%22700%22 fill=%22white%22 text-anchor=%22middle%22%3ER$%3C/text%3E%3C/svg%3E">
 
 <script src="assets/vendor/chart-4.4.1.umd.min.js" integrity="sha384-dug+JxfBvklEQdJ4AYuBBAIScUz0bVN73xpy273gcAwHjb3qI0fXmuYNaNfdyYJG"></script>
-<script src="assets/cofre.js?v=202611142140"></script>
-<link rel="stylesheet" href="assets/style.css?v=202611142140">
+<script src="assets/cofre.js?v=202611142145"></script>
+<link rel="stylesheet" href="assets/style.css?v=202611142145">
 </head>
 <body>
 <div id="boot" role="status"><span class="spin" aria-hidden="true"></span>Abrindo seus dados…</div>
@@ -53,6 +53,7 @@
         <div class="ring-wrap"><div class="ring" id="ring"><svg viewBox="0 0 100 100"><circle class="tr" cx="50" cy="50" r="42"/><circle class="pr" id="ringPr" cx="50" cy="50" r="42" pathLength="100" stroke-dasharray="100" stroke-dashoffset="100"/></svg><span id="ringTxt">0%</span></div><small id="ringCap">das entradas foram gastas</small></div>
       </div>
       <div class="grid" id="kpis"></div>
+      <div class="panel reveal meta-card" id="metaCard" style="--i:3" hidden></div>
       <div class="grid">
         <div class="panel span-8 lift reveal" style="--i:4">
           <div class="ph"><div><h2>Entradas × saídas</h2><div class="sub">Por mês, sem transferências entre suas contas</div></div></div>
@@ -114,6 +115,16 @@
           <p class="note" id="fcNote"></p>
         </div>
       </div>
+      <div class="grid">
+        <div class="panel span-7 reveal" id="apPanel" style="--i:1" hidden>
+          <div class="ph"><div><h2>Sobra do mês e aporte</h2><div class="sub" id="apSub"></div></div></div>
+          <div id="apBody"></div>
+        </div>
+        <div class="panel span-5 reveal" id="resPanel" style="--i:2">
+          <div class="ph"><div><h2>Reserva de emergência</h2><div class="sub" id="resSub"></div></div></div>
+          <div id="resBody"></div>
+        </div>
+      </div>
       <div class="panel reveal" style="--i:2">
         <div class="ph"><div><h2>Orçamento por categoria</h2><div class="sub" id="bSub"></div></div><span class="pill" id="bTotal"></span></div>
         <div class="txsum b-kpis" id="bKpis"></div>
@@ -134,7 +145,8 @@
     <div class="dw-body" id="dwBody"></div>
   </aside>
 </div>
-<script src="assets/app.js?v=202611142140"></script>
-<script src="assets/orcamento.js?v=202611142140"></script>
+<script src="assets/app.js?v=202611142145"></script>
+<script src="assets/orcamento.js?v=202611142145"></script>
+<script src="assets/meta.js?v=202611142145"></script>
 </body>
 </html>
