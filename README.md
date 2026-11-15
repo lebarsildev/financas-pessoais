@@ -107,6 +107,10 @@ Não existe recuperação de senha: se esquecer, gere o cofre de novo a partir d
 
 `index.html` e `investimentos.html` carregam `assets/*.js|css?v=AAAAMMDDHHMM`. Ao mudar o código, atualize esse número (o Claude faz isso ao publicar) para o navegador não usar a versão antiga em cache.
 
+## Virada do ano
+
+Com dados de mais de um ano, a Conta mostra o seletor "‹ ano ›": a barra lista os meses daquele ano e "Ano todo" soma só ele. Comparações entre meses (média, mês anterior, previsão) continuam atravessando a virada.
+
 ## Segurança do site
 
 - O Chart.js é servido pelo próprio site (`assets/vendor/chart-4.4.1.umd.min.js`), com verificação de integridade (SRI). Nenhum código de terceiros roda junto com os dados decifrados.
@@ -119,3 +123,7 @@ Não existe recuperação de senha: se esquecer, gere o cofre de novo a partir d
 - **Meta 1 milhão**: simulador com dois caminhos (CDI e IPCA + juros), em reais de hoje, tabela de aportes e acompanhamento do plano salvo (fica no navegador).
 - `data/indices.json` é público (CDI e IPCA mensais, sem dados pessoais). O `tools/gerar_cofre.py` atualiza pelo Banco Central (SGS 4391 e 433); sem internet, mantém o arquivo.
 - Botão de olho no topo dos dois módulos: troca os valores por "R$ ••••" e esconde a escala dos gráficos.
+
+## Fontes
+
+As fontes (Bricolage Grotesque, Figtree, IBM Plex Mono; licença OFL) ficam em `assets/fonts/`. O site não busca nada no Google; a única chamada externa é a cotação em brapi.dev.

@@ -37,7 +37,10 @@ $('#relock').onclick = () => {
 };
 
 /* ---------- data model ---------- */
-let TX, MONTHS, CATS, CATCOLOR, FATS=[];
+let TX, MONTHS, YEARS, CATS, CATCOLOR, FATS=[];
+/* "Tudo" vale para o ano escolhido (S.year); comparações entre meses continuam atravessando os anos */
+const YM = () => MONTHS.filter(m=>m.startsWith(S.year));
+const noAno = t => t.m.startsWith(S.year);
 const FIXCOL={'PIX para pessoas':'var(--c2)','Viagem':'var(--c4)','Educação':'var(--c6)','Cartão de crédito':'var(--c1)','Transferências / Outros':'var(--c2)','Mercado':'var(--c3)','Contas fixas':'var(--c4)','Compras online':'var(--c5)','Lazer':'var(--c6)','Alimentação':'var(--c7)','Transporte':'var(--c8)','Assinaturas':'var(--c1)','Compras':'var(--c5)'};
 const ccol = c => (CATCOLOR&&CATCOLOR[c]) || FIXCOL[c] || 'var(--c9)';
 function prep(){
@@ -59,6 +62,8 @@ function prep(){
   const ms=TX.map(t=>t.m).sort(); let [y,mo]=ms[0].split('-').map(Number); const end=ms[ms.length-1];
   while(true){ const k=y+'-'+String(mo).padStart(2,'0'); MONTHS.push(k); if(k>=end) break; if(++mo>12){mo=1;y++;} }
   if(!S.month || (S.month!=='all' && !MONTHS.includes(S.month))) S.month = MONTHS[MONTHS.length-1];
+  YEARS = [...new Set(MONTHS.map(m=>m.slice(0,4)))];
+  S.year = S.month!=='all' ? S.month.slice(0,4) : (YEARS.includes(S.year) ? S.year : YEARS[YEARS.length-1]);
   const tot = {};
   TX.forEach(t => { if(t.v<0 && !FORA.has(t.c)) tot[t.c]=(tot[t.c]||0)-t.v; });
   CATS = Object.keys(tot).sort((a,b)=>tot[b]-tot[a]);
@@ -70,7 +75,7 @@ function prep(){
   CATS.forEach(c => { budgets[c] = saved[c] ?? Math.ceil((tot[c]/has.length)/10)*10; });
 }
 const hasData = m => TX.some(t=>t.m===m);
-function sel(){ return S.month==='all' ? TX : TX.filter(t=>t.m===S.month); }
+function sel(){ return S.month==='all' ? TX.filter(noAno) : TX.filter(t=>t.m===S.month); }
 function summary(list, det=S.detalhar){
   let inn=0,out=0; const cat={}, card={};
   list.forEach(t=>{ if(FORA.has(t.c)) return; if(t.v>0) inn+=t.v; else { out-=t.v;
@@ -78,16 +83,13 @@ function summary(list, det=S.detalhar){
     else cat[t.c]=(cat[t.c]||0)-t.v; } });
   return {inn,out,net:inn-out,cat,card};
 }
-function lastSaldo(m){ const s=D.saldo.filter(([d])=>m==='all'||d.startsWith(m)); return s.length? s[s.length-1][1] : null; }
-const label = m => m==='all' ? 'Todo o período' : MESL[+m.slice(5)-1]+' '+m.slice(0,4);
+function lastSaldo(m){ const s=D.saldo.filter(([d])=>d.startsWith(m==='all'?S.year:m)); return s.length? s[s.length-1][1] : null; }
+const label = m => m==='all' ? (YEARS.length>1 ? 'Ano de '+S.year : 'Todo o período') : MESL[+m.slice(5)-1]+' '+m.slice(0,4);
 
 /* ---------- render ---------- */
 function init(){
   prep(); $('#lock').hidden=true; $('#app').hidden=false; $('#app').classList.remove('enter'); void $('#app').offsetWidth; $('#app').classList.add('enter');
-  const mb=$('#months'); mb.innerHTML='';
-  const mk=(v,t,dis)=>{const b=document.createElement('button');b.type='button';b.textContent=t;b.dataset.m=v;b.disabled=!!dis;if(dis)b.title='Sem lançamentos no extrato';b.onclick=()=>{S.month=v;render();};mb.appendChild(b);};
-  mk('all','Tudo');
-  MONTHS.forEach(m=>mk(m,MES[+m.slice(5)-1]+'/'+m.slice(2,4),!hasData(m)));
+  barraMeses();
   const fc=$('#fcat'); fc.length=1; [...CATS,...new Set(FATS.flatMap(f=>f.compras.map(x=>x[3]))),'Receitas','Rendimentos',INTERNAL,'Repasse'].filter((v,i,a)=>a.indexOf(v)===i).forEach(c=>{const o=document.createElement('option');o.value=c;o.textContent=c;fc.appendChild(o);});
   ['q','fcat','ftype'].forEach(id=>$('#'+id).addEventListener('input',renderTx));
   document.querySelectorAll('nav.tabs button').forEach(b=>b.onclick=()=>{S.view=b.dataset.v;render();});
@@ -97,7 +99,23 @@ function init(){
   render();
 }
 const esc = s => String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+/* barra de meses do ano escolhido; com mais de um ano de dados aparece o seletor ‹ ano › */
+function barraMeses(){
+  const mb=$('#months'); mb.innerHTML=''; mb.dataset.ano=S.year;
+  const mk=(v,t,dis)=>{const b=document.createElement('button');b.type='button';b.textContent=t;b.dataset.m=v;b.disabled=!!dis;if(dis)b.title='Sem lançamentos no extrato';b.onclick=()=>{S.month=v;render();};mb.appendChild(b);};
+  if(YEARS.length>1){
+    const i=YEARS.indexOf(S.year), g=document.createElement('span'); g.className='yr'; g.setAttribute('role','group'); g.setAttribute('aria-label','Ano');
+    const seta=(d,t,rot)=>{const b=document.createElement('button');b.type='button';b.className='yr-b';b.textContent=t;b.setAttribute('aria-label',rot);b.disabled=!YEARS[i+d];
+      b.onclick=()=>{ S.year=YEARS[i+d]; if(S.month!=='all'){ const c=YM().filter(hasData); S.month=c.length?c[d<0?c.length-1:0]:'all'; } S.openCat=null; render(); };g.appendChild(b);};
+    seta(-1,'‹','Ano anterior'); const l=document.createElement('b'); l.textContent=S.year; l.setAttribute('aria-live','polite'); g.appendChild(l); seta(1,'›','Ano seguinte');
+    mb.appendChild(g);
+  }
+  mk('all', YEARS.length>1 ? 'Ano todo' : 'Tudo');
+  YM().forEach(m=>mk(m,MES[+m.slice(5)-1]+(YEARS.length>1?'':'/'+m.slice(2,4)),!hasData(m)));
+}
 function render(){
+  if(S.month!=='all') S.year=S.month.slice(0,4);
+  if($('#months').dataset.ano!==S.year) barraMeses();
   document.querySelectorAll('#months button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.m===S.month));
   document.querySelectorAll('nav.tabs button').forEach(b=>b.setAttribute('aria-selected',b.dataset.v===S.view));
   ['overview','tx','budget'].forEach(v=>$('#v-'+v).hidden = v!==S.view);
@@ -206,9 +224,9 @@ function renderOverview(noCharts){
   const I=[];
   if(S.month!=='all'){ monthInsights(I, s, outros, media); }
   else {
-  const all=summary(TX,false);
+  const all=summary(sel(),false);
   const cc=all.cat['Cartão de crédito']||0;
-  if(cc){ const bills=TX.filter(t=>t.c==='Cartão de crédito'), top=bills.reduce((a,t)=>t.v<a.v?t:a,bills[0]);
+  if(cc){ const bills=sel().filter(t=>t.c==='Cartão de crédito'), top=bills.reduce((a,t)=>t.v<a.v?t:a,bills[0]);
     I.push(['warn',`<b>Fatura do cartão</b> é ${(cc/all.out*100).toFixed(0)}% de tudo que saiu (${brl0(cc)}). A maior foi em ${MESL[+top.m.slice(5)-1].toLowerCase()}: ${brl0(-top.v)}.`]); }
   if(FATS.length){ const lf=FATS[FATS.length-1], ass=lf.compras.filter(x=>x[3]==='Assinaturas'), top=lf.compras.filter(x=>x[4]>0).sort((a,b)=>b[4]-a[4])[0];
     const byc={}; FATS.forEach(f=>f.compras.forEach(x=>{ if(x[4]>0) byc[x[3]]=(byc[x[3]]||0)+x[4]; })); const tc=Object.entries(byc).sort((a,b)=>b[1]-a[1])[0];
@@ -216,11 +234,11 @@ function renderOverview(noCharts){
     const span = FATS.length>2 ? `${MES[+FATS[0].mes.slice(5)-1]} a ${MES[+lf.mes.slice(5)-1]}` : FATS.map(f=>MES[+f.mes.slice(5)-1]).join(' e ');
     I.push(['in',`<b>${FATS.length} fatura${FATS.length>1?'s':''} do cartão detalhada${FATS.length>1?'s':''}</b> (${span}). No cartão, o que mais pesou foi ${esc(tc[0])} (${brl0(tc[1])}); a maior compra foi ${esc(big[1])}, ${brl0(big[4])}.${ass.length?` Assinaturas: ${brl0(ass.reduce((a,x)=>a+x[4],0))}/mês.`:''}`]); }
   if(all.cat['Saques']) I.push(['warn',`<b>${brl0(all.cat['Saques'])} em saques</b> no período. Dinheiro vivo some do controle; vale anotar o destino.`]);
-  const gaps=MONTHS.filter(m=>!hasData(m));
+  const gaps=YM().filter(m=>!hasData(m));
   if(gaps.length) I.push(['out',`<b>${gaps.map(m=>MESL[+m.slice(5)-1]).join(', ')} sem dados</b> no extrato. ${gaps.length>1?'Esses meses ficam vazios':'O mês fica vazio'} até você importar.`]);
   if(D.revisar&&D.revisar.length) I.push(['out',`<b>${D.revisar.length} linhas para revisar</b> na aba Lançamentos, com valores sem data ou sem descrição.`]);
   const ot=all.cat['Transferências / Outros']; if(ot) I.push(['warn',`<b>${brl0(ot)} sem categoria definida</b> em "Transferências / Outros". Ajuste as regras em extratos/categorias.json.`]);
-  $('#insSub').textContent='Resumo de todo o período';
+  $('#insSub').textContent = YEARS.length>1 ? 'Resumo de '+S.year : 'Resumo de todo o período';
   }
   if(!noCharts) $('#insights').innerHTML = I.map(([k,t],i)=>`<li style="--i:${i}"><span class="pill ${k}">${k==='in'?'✓':'!'}</span><span>${t}</span></li>`).join('');
 
@@ -261,21 +279,23 @@ function drawCharts(force){
   if(force){ Object.values(charts).forEach(c=>c.destroy()); charts={}; }
   const fg=css('--muted'), grid=css('--line'), cin=css('--in'), cout=css('--out'), acc=css('--accent');
   Chart.defaults.font.family = getComputedStyle(document.body).fontFamily; Chart.defaults.color = fg;
-  const ms = MONTHS.map(m=>summary(TX.filter(t=>t.m===m)));
-  const hl = i => S.month==='all'||MONTHS[i]===S.month;
+  const MS = YM();
+  if(charts.m && charts.m.$ano!==S.year){ charts.m.destroy(); charts.m=null; }
+  const ms = MS.map(m=>summary(TX.filter(t=>t.m===m)));
+  const hl = i => S.month==='all'||MS[i]===S.month;
   const bgIn=ms.map((_,i)=>hl(i)?cin:cin+'40'), bgOut=ms.map((_,i)=>hl(i)?cout:cout+'40');
   if(charts.m){ charts.m.data.datasets[0].backgroundColor=bgIn; charts.m.data.datasets[1].backgroundColor=bgOut; charts.m.update(); }
-  else charts.m = new Chart($('#chMonths'),{type:'bar',data:{labels:MONTHS.map(m=>MES[+m.slice(5)-1]),datasets:[
-    {label:'Entradas',data:ms.map((x,i)=>hasData(MONTHS[i])?x.inn:null),backgroundColor:bgIn,borderRadius:6,maxBarThickness:22,hoverBackgroundColor:cin},
-    {label:'Saídas',data:ms.map((x,i)=>hasData(MONTHS[i])?x.out:null),backgroundColor:bgOut,borderRadius:6,maxBarThickness:22,hoverBackgroundColor:cout}]},
+  else { charts.m = new Chart($('#chMonths'),{type:'bar',data:{labels:MS.map(m=>MES[+m.slice(5)-1]),datasets:[
+    {label:'Entradas',data:ms.map((x,i)=>hasData(MS[i])?x.inn:null),backgroundColor:bgIn,borderRadius:6,maxBarThickness:22,hoverBackgroundColor:cin},
+    {label:'Saídas',data:ms.map((x,i)=>hasData(MS[i])?x.out:null),backgroundColor:bgOut,borderRadius:6,maxBarThickness:22,hoverBackgroundColor:cout}]},
     options:{maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
       animation:RM?false:{duration:850,easing:'easeOutQuart',delay:c=>c.type==='data'&&c.mode==='default'&&!c.chart.$done?c.dataIndex*60+c.datasetIndex*120:0,onComplete:a=>{a.chart.$done=true;}},
       onHover:(e,els)=>{ e.native.target.style.cursor = els.length?'pointer':'default'; },
       plugins:{legend:{position:'top',align:'end',labels:{boxWidth:10,boxHeight:10,useBorderRadius:true,borderRadius:3}},
         tooltip:{callbacks:{label:c=>' '+c.dataset.label+': '+(c.raw==null?'sem dados':brl(c.raw))}}},
       scales:{x:{grid:{display:false}},y:{grid:{color:grid},border:{display:false},ticks:{callback:v=>'R$ '+(v/1000)+'k'}}},
-      onClick:(e,els)=>{ if(els.length){const m=MONTHS[els[0].index]; if(hasData(m)){S.month=m;render();}} }}});
-  const sd = D.saldo.filter(([d])=>(S.month==='all'||d.startsWith(S.month)));
+      onClick:(e,els)=>{ if(els.length){const m=MS[els[0].index]; if(hasData(m)){S.month=m;render();}} }}}); charts.m.$ano=S.year; }
+  const sd = D.saldo.filter(([d])=>d.startsWith(S.month==='all'?S.year:S.month));
   if(charts.s) charts.s.destroy();
   const step = 1100/Math.max(sd.length,1);
   const prevY = c => c.index===0 ? c.chart.scales.y.getPixelForValue(0) : c.chart.getDatasetMeta(c.datasetIndex).data[c.index-1].getProps(['y'],true).y;

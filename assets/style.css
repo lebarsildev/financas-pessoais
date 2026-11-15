@@ -1,3 +1,8 @@
+/* fontes do próprio site (nada é buscado no Google) */
+@font-face{font-family:"Bricolage Grotesque";src:url("fonts/bricolage-grotesque.woff2") format("woff2");font-weight:200 800;font-style:normal;font-display:swap}
+@font-face{font-family:"Figtree";src:url("fonts/figtree.woff2") format("woff2");font-weight:300 900;font-style:normal;font-display:swap}
+@font-face{font-family:"IBM Plex Mono";src:url("fonts/ibm-plex-mono-400.woff2") format("woff2");font-weight:400;font-style:normal;font-display:swap}
+@font-face{font-family:"IBM Plex Mono";src:url("fonts/ibm-plex-mono-500.woff2") format("woff2");font-weight:500;font-style:normal;font-display:swap}
 :root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 html{color-scheme:light}
 body{margin:0}
@@ -455,3 +460,10 @@ td.r.num{white-space:nowrap}
 .privado .privbtn .ic-eye{transform:translateY(-130%);opacity:0}
 .privado .privbtn .ic-eyeoff{transform:none;opacity:1}
 .privado .privbtn{border-color:var(--accent);color:var(--accent)}
+
+/* seletor de ano (aparece quando há mais de um ano de dados) */
+.months .yr{flex:none;display:inline-flex;align-items:center;gap:2px;border:1px solid var(--line);background:var(--surface);border-radius:99px;padding:2px;margin-right:6px}
+.months .yr b{font-family:var(--f-mono);font-weight:500;font-size:14px;padding:0 6px;min-width:4ch;text-align:center}
+.months .yr .yr-b{border:0;background:transparent;padding:4px 10px;font-size:16px;line-height:1;box-shadow:none}
+.months .yr .yr-b:not(:disabled):hover{background:var(--surface-2);transform:none}
+.months .yr .yr-b:disabled{text-decoration:none;opacity:.3}

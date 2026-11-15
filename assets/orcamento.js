@@ -161,8 +161,8 @@ function renderPrevisao(m, cm) {
 
 function renderMetas(m, cm, still) {
   $('#budget').classList.toggle('still', !!still);
-  const mult = m ? 1 : MONTHS.filter(hasData).length;
-  const s = summary(m ? TX.filter(t => t.m === m) : TX, true);
+  const mult = m ? 1 : YM().filter(hasData).length;
+  const s = summary(m ? TX.filter(t => t.m === m) : TX.filter(noAno), true);
   const andamento = m && emAndamento(m), ref = m ? dataRef(m) : '', frac = andamento ? (+ref.slice(8)) / diasNoMes(m) : 1;
   const cats = ORC.cats.concat(Object.keys(s.cat).filter(c => !NAO_ORCA.has(c) && !ORC.cats.includes(c) && s.cat[c] > 0)).filter(c => (ORC.metas[c] || 0) > 0 || (s.cat[c] || 0) > 0);
   let tB = 0, tS = 0, est = 0, aten = 0;
